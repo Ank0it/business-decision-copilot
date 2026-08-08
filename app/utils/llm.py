@@ -28,14 +28,24 @@ class LLMClient:
     """
 
     def __init__(self) -> None:
-        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
-
+        self._client = None
         self.model = settings.GEMINI_MODEL
-
         self.generation_config = types.GenerateContentConfig(
             temperature=settings.TEMPERATURE,
             max_output_tokens=settings.MAX_OUTPUT_TOKENS,
         )
+
+    @property
+    def client(self):
+        if self._client is None:
+            api_key = settings.GEMINI_API_KEY
+            if not api_key:
+                raise RuntimeError(
+                    "GEMINI_API_KEY is not configured. "
+                    "Set it in your environment or .env file."
+                )
+            self._client = genai.Client(api_key=api_key)
+        return self._client
 
     def generate(self, prompt: str) -> str:
         """
