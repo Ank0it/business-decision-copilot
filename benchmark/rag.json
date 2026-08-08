@@ -1,0 +1,114 @@
+[
+  {
+    "id": "RAG-001",
+    "question": "What is the refund period for annual subscriptions?",
+    "expected_sources": [
+      "refund_policy.md"
+    ],
+    "expected_answer_contains": [
+      "30",
+      "annual subscription",
+      "refund"
+    ]
+  },
+  {
+    "id": "RAG-002",
+    "question": "Under what conditions can a customer request a refund?",
+    "expected_sources": [
+      "refund_policy.md"
+    ],
+    "expected_answer_contains": [
+      "refund",
+      "eligible"
+    ]
+  },
+  {
+    "id": "RAG-003",
+    "question": "How are refund requests escalated?",
+    "expected_sources": [
+      "escalation_matrix.md"
+    ],
+    "expected_answer_contains": [
+      "finance",
+      "manager",
+      "escalated"
+    ]
+  },
+  {
+    "id": "RAG-004",
+    "question": "What does the warranty policy cover?",
+    "expected_sources": [
+      "warranty_policy.md"
+    ],
+    "expected_answer_contains": [
+      "warranty"
+    ]
+  },
+  {
+    "id": "RAG-005",
+    "question": "What shipping policy applies to returned products?",
+    "expected_sources": [
+      "shipping_returns.md"
+    ],
+    "expected_answer_contains": [
+      "shipping",
+      "return"
+    ]
+  },
+  {
+    "id": "RAG-006",
+    "question": "How should support agents handle refund requests?",
+    "expected_sources": [
+      "support_sop.md"
+    ],
+    "expected_answer_contains": [
+      "support",
+      "refund"
+    ]
+  },
+  {
+    "id": "RAG-007",
+    "question": "What payment methods are supported for subscriptions?",
+    "expected_sources": [
+      "pricing_policy.md",
+      "subscription_terms.md"
+    ],
+    "expected_answer_contains": [
+      "payment"
+    ]
+  },
+  {
+    "id": "RAG-008",
+    "question": "What are the pricing rules for enterprise customers?",
+    "expected_sources": [
+      "pricing_policy.md"
+    ],
+    "expected_answer_contains": [
+      "enterprise",
+      "pricing"
+    ]
+  },
+  {
+    "id": "RAG-009",
+    "question": "When should Finance approve large refunds?",
+    "expected_sources": [
+      "finance_guidelines.md",
+      "escalation_matrix.md"
+    ],
+    "expected_answer_contains": [
+      "finance",
+      "approval"
+    ]
+  },
+  {
+    "id": "RAG-010",
+    "question": "What are the subscription cancellation rules?",
+    "expected_sources": [
+      "subscription_terms.md"
+    ],
+    "expected_answer_contains": [
+      "subscription",
+      "cancel"
+    ]
+  }
+]

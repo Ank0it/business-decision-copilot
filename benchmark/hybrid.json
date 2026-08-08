@@ -1,0 +1,95 @@
+[
+  {
+    "id": "HYBRID-001",
+    "query_type": "hybrid",
+    "question": "Based on our refund policy and actual payment data, which product category should Finance investigate first?",
+    "expected_documents": [
+      "refund_policy.md",
+      "finance_guidelines.md"
+    ],
+    "expected_tables": [
+      "payments",
+      "order_items",
+      "products"
+    ],
+    "expected_keywords": [
+      "refund policy",
+      "payment",
+      "investigate",
+      "product category"
+    ]
+  },
+  {
+    "id": "HYBRID-002",
+    "query_type": "hybrid",
+    "question": "According to the shipping policy and our delivered orders, which state has the highest completed deliveries?",
+    "expected_documents": [
+      "shipping_returns.md"
+    ],
+    "expected_tables": [
+      "orders",
+      "customers"
+    ],
+    "expected_keywords": [
+      "shipping",
+      "delivery",
+      "state",
+      "completed orders"
+    ]
+  },
+  {
+    "id": "HYBRID-003",
+    "query_type": "hybrid",
+    "question": "Using the warranty policy and customer review data, which product category should Product Operations review first?",
+    "expected_documents": [
+      "warranty_policy.md"
+    ],
+    "expected_tables": [
+      "reviews",
+      "products",
+      "order_items"
+    ],
+    "expected_keywords": [
+      "warranty",
+      "review score",
+      "product category",
+      "quality"
+    ]
+  },
+  {
+    "id": "HYBRID-004",
+    "query_type": "hybrid",
+    "question": "Considering our pricing policy and payment records, which payment method contributes the most revenue and should remain prioritized?",
+    "expected_documents": [
+      "pricing_policy.md"
+    ],
+    "expected_tables": [
+      "payments"
+    ],
+    "expected_keywords": [
+      "pricing",
+      "payment type",
+      "revenue",
+      "priority"
+    ]
+  },
+  {
+    "id": "HYBRID-005",
+    "query_type": "hybrid",
+    "question": "Based on the support SOP and customer review data, which product category appears to require the greatest customer support attention?",
+    "expected_documents": [
+      "support_sop.md"
+    ],
+    "expected_tables": [
+      "reviews",
+      "products",
+      "order_items"
+    ],
+    "expected_keywords": [
+      "support",
+      "customer reviews",
+      "product category",
+      "recommendation"
+    ]
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "SQL-001",
+    "question": "How many orders have been placed?",
+    "expected_tables": [
+      "orders"
+    ],
+    "expected_sql_contains": [
+      "COUNT",
+      "orders"
+    ]
+  },
+  {
+    "id": "SQL-002",
+    "question": "What is the total revenue generated from all payments?",
+    "expected_tables": [
+      "payments"
+    ],
+    "expected_sql_contains": [
+      "SUM",
+      "payment_value"
+    ]
+  },
+  {
+    "id": "SQL-003",
+    "question": "Which product category generated the highest revenue?",
+    "expected_tables": [
+      "order_items",
+      "products",
+      "payments"
+    ],
+    "expected_sql_contains": [
+      "GROUP BY",
+      "SUM",
+      "ORDER BY"
+    ]
+  },
+  {
+    "id": "SQL-004",
+    "question": "Which seller has fulfilled the most orders?",
+    "expected_tables": [
+      "order_items",
+      "sellers"
+    ],
+    "expected_sql_contains": [
+      "COUNT",
+      "GROUP BY"
+    ]
+  },
+  {
+    "id": "SQL-005",
+    "question": "What is the average payment value per order?",
+    "expected_tables": [
+      "payments"
+    ],
+    "expected_sql_contains": [
+      "AVG",
+      "payment_value"
+    ]
+  },
+  {
+    "id": "SQL-006",
+    "question": "How many customers are there in each state?",
+    "expected_tables": [
+      "customers"
+    ],
+    "expected_sql_contains": [
+      "GROUP BY",
+      "customer_state"
+    ]
+  },
+  {
+    "id": "SQL-007",
+    "question": "Which five cities have the highest number of customers?",
+    "expected_tables": [
+      "customers"
+    ],
+    "expected_sql_contains": [
+      "LIMIT",
+      "ORDER BY",
+      "COUNT"
+    ]
+  },
+  {
+    "id": "SQL-008",
+    "question": "What is the average review score for each product category?",
+    "expected_tables": [
+      "reviews",
+      "orders",
+      "order_items",
+      "products"
+    ],
+    "expected_sql_contains": [
+      "AVG",
+      "review_score",
+      "GROUP BY"
+    ]
+  },
+  {
+    "id": "SQL-009",
+    "question": "How many delivered orders were completed each month?",
+    "expected_tables": [
+      "orders"
+    ],
+    "expected_sql_contains": [
+      "GROUP BY",
+      "order_purchase_timestamp"
+    ]
+  },
+  {
+    "id": "SQL-010",
+    "question": "Which payment type is used most frequently?",
+    "expected_tables": [
+      "payments"
+    ],
+    "expected_sql_contains": [
+      "payment_type",
+      "COUNT",
+      "GROUP BY"
+    ]
+  }
+]
