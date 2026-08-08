@@ -12,7 +12,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from app.core.config import PROMPT_DIR
+from app.core.config import settings
 
 
 class PromptManager:
@@ -41,7 +41,7 @@ class PromptManager:
                 If the prompt file does not exist.
         """
 
-        path: Path = PROMPT_DIR / filename
+        path: Path = settings.PROMPT_DIR / filename
 
         if not path.exists():
             raise FileNotFoundError(
@@ -67,10 +67,6 @@ class PromptManager:
     @classmethod
     def hybrid(cls) -> str:
         return cls.load("hybrid.txt")
-
-    @classmethod
-    def refusal(cls) -> str:
-        return cls.load("refusal.txt")
 
 
 prompts = PromptManager()
