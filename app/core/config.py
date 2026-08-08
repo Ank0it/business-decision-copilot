@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     # LLM
     # ---------------------------------------------------------
 
-    GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-flash-latest"
+    ZHIPU_API_KEY: str = ""
+    ZHIPU_MODEL: str = "glm-4.5-flash"
     TEMPERATURE: float = 0.1
     MAX_OUTPUT_TOKENS: int = 2048
 

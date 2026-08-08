@@ -19,9 +19,9 @@ pydantic-settings==2.10.1
 python-dotenv==1.1.1
 
 # ---------------------------
-# LLM (Google Gemini)
+# LLM (ZhipuAI GLM)
 # ---------------------------
-google-genai==1.30.0
+zhipuai==2.1.6
 
 # ---------------------------
 # Vector Database (RAG)

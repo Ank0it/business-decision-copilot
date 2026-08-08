@@ -150,7 +150,7 @@ The SQLite database is built from the **real Olist Brazilian E-Commerce Public D
 ## LLM Integration
 
 - **Provider:** Google Gemini
-- **Model:** `gemini-flash-latest`
+- **Model:** `glm-4.5-flash`
 - **Configuration:** Temperature and max output tokens are configurable via environment variables
 - **Lazy initialization:** The Gemini client is created on first use
 - **Error handling:** Empty responses, invalid JSON, API errors, and quota exhaustion are surfaced with clear error messages
@@ -347,8 +347,8 @@ Required variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `GEMINI_API_KEY` | Google Gemini API key | (empty) |
-| `GEMINI_MODEL` | Gemini model identifier | `gemini-flash-latest` |
+| `ZHIPU_API_KEY` | ZhipuAI API key | (empty) |
+| `ZHIPU_MODEL` | GLM model identifier | `glm-4.5-flash` |
 | `TEMPERATURE` | LLM generation temperature | `0.1` |
 | `MAX_OUTPUT_TOKENS` | Maximum tokens per LLM response | `2048` |
 

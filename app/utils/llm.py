@@ -2,10 +2,10 @@
 LLM Client
 
 Centralized interface for interacting with the configured
-Large Language Model (Google Gemini).
+Large Language Model (ZhipuAI GLM).
 
 Responsibilities:
-- Initialize the Gemini client
+- Initialize the ZhipuAI client
 - Standardize generation parameters
 - Provide a reusable text generation interface
 - Handle API errors consistently
@@ -13,15 +13,14 @@ Responsibilities:
 
 from __future__ import annotations
 
-from google import genai
-from google.genai import types
+from zhipuai import ZhipuAI
 
 from app.core.config import settings
 
 
 class LLMClient:
     """
-    Wrapper around the Google GenAI SDK.
+    Wrapper around the ZhipuAI SDK.
 
     All services should use this class instead of interacting
     with the SDK directly.
@@ -29,22 +28,20 @@ class LLMClient:
 
     def __init__(self) -> None:
         self._client = None
-        self.model = settings.GEMINI_MODEL
-        self.generation_config = types.GenerateContentConfig(
-            temperature=settings.TEMPERATURE,
-            max_output_tokens=settings.MAX_OUTPUT_TOKENS,
-        )
+        self.model = settings.ZHIPU_MODEL
+        self.temperature = settings.TEMPERATURE
+        self.max_output_tokens = settings.MAX_OUTPUT_TOKENS
 
     @property
     def client(self):
         if self._client is None:
-            api_key = settings.GEMINI_API_KEY
+            api_key = settings.ZHIPU_API_KEY
             if not api_key:
                 raise RuntimeError(
-                    "GEMINI_API_KEY is not configured. "
+                    "ZHIPU_API_KEY is not configured. "
                     "Set it in your environment or .env file."
                 )
-            self._client = genai.Client(api_key=api_key)
+            self._client = ZhipuAI(api_key=api_key)
         return self._client
 
     def generate(self, prompt: str) -> str:
@@ -53,7 +50,7 @@ class LLMClient:
 
         Args:
             prompt:
-                Complete prompt sent to Gemini.
+                Complete prompt sent to GLM.
 
         Returns:
             Generated response text.
@@ -64,20 +61,23 @@ class LLMClient:
         """
 
         try:
-            response = self.client.models.generate_content(
+            response = self.client.chat.completions.create(
                 model=self.model,
-                contents=prompt,
-                config=self.generation_config,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.temperature,
+                max_tokens=self.max_output_tokens,
             )
 
-            if not response.text:
+            content = response.choices[0].message.content
+
+            if not content:
                 raise RuntimeError("Model returned an empty response.")
 
-            return response.text.strip()
+            return content.strip()
 
         except Exception as exc:
             raise RuntimeError(
-                f"LLM generation failed: {exc}"
+                f"ZhipuAI generation failed: {exc}"
             ) from exc
 
 
