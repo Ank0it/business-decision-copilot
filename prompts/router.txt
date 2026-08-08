@@ -144,15 +144,21 @@ The SQL database contains
 
 customers
 
-orders
+sellers
 
 products
 
-subscriptions
+orders
 
-refunds
+order_items
 
 payments
+
+reviews
+
+product_categories
+
+order_summary
 
 ------------------------------------------------------------
 
