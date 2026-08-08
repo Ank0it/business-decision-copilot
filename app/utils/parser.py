@@ -28,6 +28,42 @@ class JSONParser:
     """
 
     @staticmethod
+    def _strip_code_fence(text: str) -> str:
+        """
+        Remove an outer Markdown code fence if present.
+
+        Handles:
+
+        - ```json ... ```
+        - ``` ... ```
+        - Plain JSON without fences
+
+        Args:
+            text:
+                Raw LLM response text.
+
+        Returns:
+            Text with outer code fence removed, if one was present.
+        """
+
+        text = text.strip()
+
+        if text.startswith("```"):
+            lines = text.splitlines()
+
+            if len(lines) >= 2:
+                inner = "\n".join(lines[1:])
+
+                if inner.strip().endswith("```"):
+                    inner = inner.strip()[:-3]
+
+                return inner.strip()
+
+        return text
+
+    # ---------------------------------------------------------
+
+    @staticmethod
     def parse_json(response: str) -> dict[str, Any]:
         """
         Parse a JSON string into a Python dictionary.
@@ -47,8 +83,10 @@ class JSONParser:
         if not response or not response.strip():
             raise ParserError("Received an empty response from the LLM.")
 
+        cleaned = JSONParser._strip_code_fence(response.strip())
+
         try:
-            data = json.loads(response)
+            data = json.loads(cleaned)
 
         except json.JSONDecodeError as exc:
             raise ParserError(
@@ -162,6 +200,16 @@ class JSONParser:
             )
 
         return data
+
+
+# ==========================================================
+# Convenience re-exports
+# ==========================================================
+
+parse_json = JSONParser.parse_json
+require_fields = JSONParser.require_fields
+validate_allowed_keys = JSONParser.validate_allowed_keys
+parse_and_validate = JSONParser.parse_and_validate
 
 
 # ==========================================================
