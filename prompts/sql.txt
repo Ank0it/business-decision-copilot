@@ -41,19 +41,234 @@ The business database contains these tables.
 
 customers
 
+sellers
+
 products
 
 orders
 
+order_items
+
 payments
 
-refunds
+reviews
 
-subscriptions
+product_categories
+
+order_summary
 
 Only use these tables.
 
 Never invent additional tables.
+
+Never invent columns.
+
+------------------------------------------------------------
+
+## ACTUAL SCHEMA
+
+------------------------------------------------------------
+
+Table
+
+customers
+
+Columns
+
+customer_id (TEXT, PRIMARY KEY)
+
+customer_unique_id (TEXT)
+
+customer_zip_code_prefix (INTEGER)
+
+customer_city (TEXT)
+
+customer_state (TEXT)
+
+------------------------------------------------------------
+
+Table
+
+sellers
+
+Columns
+
+seller_id (TEXT, PRIMARY KEY)
+
+seller_zip_code_prefix (INTEGER)
+
+seller_city (TEXT)
+
+seller_state (TEXT)
+
+------------------------------------------------------------
+
+Table
+
+products
+
+Columns
+
+product_id (TEXT, PRIMARY KEY)
+
+product_category_name (TEXT)
+
+product_name_lenght (INTEGER)
+
+product_description_lenght (INTEGER)
+
+product_photos_qty (INTEGER)
+
+product_weight_g (REAL)
+
+product_length_cm (REAL)
+
+product_height_cm (REAL)
+
+product_width_cm (REAL)
+
+------------------------------------------------------------
+
+Table
+
+orders
+
+Columns
+
+order_id (TEXT, PRIMARY KEY)
+
+customer_id (TEXT, FOREIGN KEY -> customers)
+
+order_status (TEXT)
+
+order_purchase_timestamp (TEXT)
+
+order_approved_at (TEXT)
+
+order_delivered_carrier_date (TEXT)
+
+order_delivered_customer_date (TEXT)
+
+order_estimated_delivery_date (TEXT)
+
+------------------------------------------------------------
+
+Table
+
+order_items
+
+Columns
+
+order_id (TEXT, FOREIGN KEY -> orders)
+
+order_item_id (INTEGER)
+
+product_id (TEXT, FOREIGN KEY -> products)
+
+seller_id (TEXT, FOREIGN KEY -> sellers)
+
+shipping_limit_date (TEXT)
+
+price (REAL)
+
+freight_value (REAL)
+
+PRIMARY KEY (order_id, order_item_id)
+
+------------------------------------------------------------
+
+Table
+
+payments
+
+Columns
+
+order_id (TEXT, FOREIGN KEY -> orders)
+
+payment_sequential (INTEGER)
+
+payment_type (TEXT)
+
+payment_installments (INTEGER)
+
+payment_value (REAL)
+
+PRIMARY KEY (order_id, payment_sequential)
+
+------------------------------------------------------------
+
+Table
+
+reviews
+
+Columns
+
+review_pk (INTEGER, PRIMARY KEY AUTOINCREMENT)
+
+review_id (TEXT, NOT NULL)
+
+order_id (TEXT, FOREIGN KEY -> orders)
+
+review_score (INTEGER)
+
+review_comment_title (TEXT)
+
+review_comment_message (TEXT)
+
+review_creation_date (TEXT)
+
+review_answer_timestamp (TEXT)
+
+NOTE: The source Olist dataset contains duplicate review_id
+values. The review_pk column is the internal primary key.
+The review_id column preserves the original Olist identifier
+and is NOT guaranteed to be unique. Do not use review_id
+as a unique key in GROUP BY or DISTINCT clauses unless
+you first deduplicate using review_pk.
+
+------------------------------------------------------------
+
+Table
+
+product_categories
+
+Columns
+
+category_name (TEXT, PRIMARY KEY)
+
+category_name_english (TEXT)
+
+------------------------------------------------------------
+
+View
+
+order_summary
+
+Columns
+
+order_id
+
+order_status
+
+order_purchase_timestamp
+
+customer_city
+
+customer_state
+
+product_id
+
+product_category_name
+
+price
+
+freight_value
+
+payment_type
+
+payment_value
+
+review_score
 
 ------------------------------------------------------------
 
@@ -67,23 +282,29 @@ orders
 
 ↓
 
-payments
+order_items
 
 ↓
-
-refunds
 
 products
 
+order_items
+
 ↓
+
+sellers
 
 orders
 
-subscriptions
+↓
+
+payments
+
+orders
 
 ↓
 
-customers
+reviews
 
 Use reasonable joins based on primary/foreign keys.
 
@@ -143,143 +364,15 @@ Examples
 
 Monthly
 
-strftime('%Y-%m', order_date)
+strftime('%Y-%m', order_purchase_timestamp)
 
 Year
 
-strftime('%Y', order_date)
+strftime('%Y', order_purchase_timestamp)
 
 Day
 
-strftime('%Y-%m-%d', order_date)
-
-------------------------------------------------------------
-
-CURRENT BUSINESS TABLES
-
-------------------------------------------------------------
-
-Table
-
-customers
-
-Columns
-
-customer_id
-
-customer_name
-
-email
-
-country
-
-signup_date
-
-status
-
-------------------------------------------------------------
-
-Table
-
-products
-
-Columns
-
-product_id
-
-product_name
-
-category
-
-price
-
-status
-
-------------------------------------------------------------
-
-Table
-
-orders
-
-Columns
-
-order_id
-
-customer_id
-
-product_id
-
-order_date
-
-quantity
-
-unit_price
-
-total_amount
-
-order_status
-
-------------------------------------------------------------
-
-Table
-
-payments
-
-Columns
-
-payment_id
-
-order_id
-
-payment_date
-
-payment_method
-
-payment_status
-
-payment_amount
-
-------------------------------------------------------------
-
-Table
-
-refunds
-
-Columns
-
-refund_id
-
-order_id
-
-refund_date
-
-refund_amount
-
-refund_reason
-
-refund_status
-
-------------------------------------------------------------
-
-Table
-
-subscriptions
-
-Columns
-
-subscription_id
-
-customer_id
-
-plan_name
-
-start_date
-
-end_date
-
-monthly_fee
-
-subscription_status
+strftime('%Y-%m-%d', order_purchase_timestamp)
 
 ------------------------------------------------------------
 
@@ -345,17 +438,17 @@ REPLACE
 
 MERGE
 
-EXEC
-
-EXECUTE
-
 ATTACH
 
 DETACH
 
-VACUUM
+EXEC
+
+EXECUTE
 
 PRAGMA
+
+VACUUM
 
 UNION
 
@@ -379,9 +472,11 @@ Customers
 
 Products
 
-Subscriptions
+Sellers
 
-KPIs
+Categories
+
+Reviews
 
 Counts
 
@@ -395,11 +490,7 @@ Trends
 
 Growth
 
-Revenue comparisons
-
-Refund comparisons
-
-Customer activity
+Comparisons
 
 Monthly analytics
 
@@ -415,15 +506,13 @@ for record counts.
 
 Use
 
-SUM(total_amount)
+SUM(price)
 
-for revenue.
+or
 
-Use
+SUM(payment_value)
 
-SUM(refund_amount)
-
-for refunds.
+for monetary totals.
 
 Use
 
@@ -451,7 +540,9 @@ by product
 
 by category
 
-by country
+by state
+
+by city
 
 group the query appropriately.
 
@@ -478,6 +569,7 @@ Top
 ↓
 
 ORDER BY DESC
+
 LIMIT n
 
 Bottom
@@ -485,6 +577,7 @@ Bottom
 ↓
 
 ORDER BY ASC
+
 LIMIT n
 
 ------------------------------------------------------------
@@ -499,11 +592,9 @@ last month
 
 this year
 
+delivered
+
 cancelled
-
-completed
-
-refunded
 
 active
 
@@ -549,7 +640,7 @@ when aggregated values may be NULL.
 
 Example
 
-COALESCE(SUM(refund_amount),0)
+COALESCE(SUM(payment_value),0)
 
 Never return NULL for business totals when zero is appropriate.
 
@@ -584,13 +675,17 @@ Preferred joins
 
 customers.customer_id = orders.customer_id
 
-orders.product_id = products.product_id
+orders.order_id = order_items.order_id
+
+order_items.product_id = products.product_id
+
+order_items.seller_id = sellers.seller_id
 
 orders.order_id = payments.order_id
 
-orders.order_id = refunds.order_id
+orders.order_id = reviews.order_id
 
-customers.customer_id = subscriptions.customer_id
+products.product_category_name = product_categories.category_name
 
 Never invent foreign keys.
 
@@ -602,19 +697,21 @@ Never invent relationships.
 
 Revenue
 
-SUM(orders.total_amount)
+SUM(order_items.price)
 
 ------------------------------------------------------------
 
-Refund Total
+Refund Value
 
-SUM(refunds.refund_amount)
+SUM(payments.payment_value)
+
+(order_items.freight_value can be included if needed)
 
 ------------------------------------------------------------
 
 Average Order Value
 
-AVG(orders.total_amount)
+AVG(order_items.price)
 
 ------------------------------------------------------------
 
@@ -626,24 +723,19 @@ COUNT(*)
 
 Customer Count
 
-COUNT(DISTINCT customer_id)
+COUNT(DISTINCT customers.customer_id)
 
 ------------------------------------------------------------
 
-Active Subscription Count
+Product Count
 
-COUNT(*)
-
-WHERE subscription_status='Active'
+COUNT(DISTINCT products.product_id)
 
 ------------------------------------------------------------
 
-Refund Rate
+Review Score
 
-SUM(refund_amount)
-/ NULLIF(SUM(total_amount),0)
-
-when appropriate.
+AVG(reviews.review_score)
 
 ------------------------------------------------------------
 
@@ -653,25 +745,25 @@ Only use status values when the user explicitly requests them.
 
 Examples
 
-Completed Orders
+Delivered Orders
 
-order_status = 'Completed'
+order_status = 'delivered'
 
 Cancelled Orders
 
-order_status = 'Cancelled'
+order_status = 'canceled'
 
-Successful Payments
+Completed Orders
 
-payment_status = 'Completed'
+order_status = 'delivered' (or 'shipped' depending on dataset)
 
-Approved Refunds
+Active Payments
 
-refund_status = 'Approved'
+payment_type is not null
 
-Active Subscription
+Approved Reviews
 
-subscription_status = 'Active'
+review_score >= 3
 
 Do not assume status filters unless the question clearly implies them.
 
@@ -702,8 +794,6 @@ attach databases
 change schema
 
 disable constraints
-
-------------------------------------------------------------
 
 Never generate
 
@@ -861,11 +951,10 @@ No additional keys.
 Correct
 
 {
-  "sql": "SELECT product_name, SUM(total_amount) AS revenue
-          FROM orders
-          JOIN products
-          ON orders.product_id = products.product_id
-          GROUP BY product_name
+  "sql": "SELECT p.product_category_name, SUM(oi.price) AS revenue
+          FROM order_items oi
+          JOIN products p ON oi.product_id = p.product_id
+          GROUP BY p.product_category_name
           ORDER BY revenue DESC
           LIMIT 5;"
 }
@@ -901,17 +990,21 @@ Before returning SQL, verify
 
 ✓ Exactly one SELECT statement.
 
+✓ SQL starts with SELECT.
+
 ✓ SQLite compatible syntax.
 
-✓ Only existing tables used.
+✓ Existing tables only.
 
-✓ Only existing columns used.
+✓ Existing columns only.
 
-✓ No invented relationships.
+✓ Correct joins only.
+
+✓ Safe aggregation.
+
+✓ No destructive SQL.
 
 ✓ No write operations.
-
-✓ No schema modifications.
 
 ✓ No SQL injection patterns.
 
@@ -923,9 +1016,13 @@ Before returning SQL, verify
 
 ✓ Valid JSON output.
 
-If ANY validation fails,
+✓ Return ONLY one JSON object.
 
-return the refusal JSON instead.
+If any rule is violated,
+
+DO NOT generate SQL.
+
+Return the refusal JSON instead.
 
 ------------------------------------------------------------
 
@@ -941,19 +1038,17 @@ Example 1
 
 Question
 
-Which product generated the highest revenue last month?
+Which product category generated the highest revenue?
 
 Output
 
 {
-  "sql":"SELECT p.product_name,
-SUM(o.total_amount) AS revenue
-FROM orders o
+  "sql":"SELECT p.product_category_name,
+SUM(oi.price) AS revenue
+FROM order_items oi
 JOIN products p
-ON o.product_id=p.product_id
-WHERE o.order_date>=DATE('now','start of month','-1 month')
-AND o.order_date<DATE('now','start of month')
-GROUP BY p.product_name
+ON oi.product_id=p.product_id
+GROUP BY p.product_category_name
 ORDER BY revenue DESC
 LIMIT 1;"
 }
@@ -964,17 +1059,17 @@ Example 2
 
 Question
 
-Top five customers by revenue.
+Top five sellers by revenue.
 
 Output
 
 {
-  "sql":"SELECT c.customer_name,
-SUM(o.total_amount) AS revenue
-FROM customers c
-JOIN orders o
-ON c.customer_id=o.customer_id
-GROUP BY c.customer_name
+  "sql":"SELECT s.seller_id,
+SUM(oi.price) AS revenue
+FROM order_items oi
+JOIN sellers s
+ON oi.seller_id=s.seller_id
+GROUP BY s.seller_id
 ORDER BY revenue DESC
 LIMIT 5;"
 }
@@ -990,9 +1085,9 @@ Average order value.
 Output
 
 {
-  "sql":"SELECT ROUND(AVG(total_amount),2)
+  "sql":"SELECT ROUND(AVG(oi.price),2)
 AS average_order_value
-FROM orders;"
+FROM order_items oi;"
 }
 
 ------------------------------------------------------------
@@ -1009,7 +1104,8 @@ Output
   "sql":"SELECT COUNT(*)
 AS order_count
 FROM orders
-WHERE order_date=DATE('now','-1 day');"
+WHERE order_purchase_timestamp>=DATE('now','-1 day')
+AND order_purchase_timestamp<DATE('now');"
 }
 
 ------------------------------------------------------------
@@ -1024,11 +1120,13 @@ Output
 
 {
   "sql":"SELECT
-strftime('%Y-%m',order_date)
+strftime('%Y-%m',order_purchase_timestamp)
 AS month,
-SUM(total_amount)
+SUM(oi.price)
 AS revenue
-FROM orders
+FROM orders o
+JOIN order_items oi
+ON o.order_id=oi.order_id
 GROUP BY month
 ORDER BY month;"
 }
@@ -1039,22 +1137,18 @@ Example 6
 
 Question
 
-Total refund amount by product.
+Total payment value by payment type.
 
 Output
 
 {
   "sql":"SELECT
-p.product_name,
-SUM(r.refund_amount)
-AS total_refunds
-FROM refunds r
-JOIN orders o
-ON r.order_id=o.order_id
-JOIN products p
-ON o.product_id=p.product_id
-GROUP BY p.product_name
-ORDER BY total_refunds DESC;"
+pay.payment_type,
+SUM(pay.payment_value)
+AS total_payments
+FROM payments pay
+GROUP BY pay.payment_type
+ORDER BY total_payments DESC;"
 }
 
 ------------------------------------------------------------
@@ -1063,19 +1157,18 @@ Example 7
 
 Question
 
-Active subscriptions by plan.
+Active sellers by state.
 
 Output
 
 {
   "sql":"SELECT
-plan_name,
-COUNT(*)
-AS active_subscriptions
-FROM subscriptions
-WHERE subscription_status='Active'
-GROUP BY plan_name
-ORDER BY active_subscriptions DESC;"
+seller_state,
+COUNT(DISTINCT seller_id)
+AS seller_count
+FROM sellers
+GROUP BY seller_state
+ORDER BY seller_count DESC;"
 }
 
 ------------------------------------------------------------
@@ -1084,19 +1177,21 @@ Example 8
 
 Question
 
-Revenue by country.
+Revenue by customer state.
 
 Output
 
 {
   "sql":"SELECT
-c.country,
-SUM(o.total_amount)
+c.customer_state,
+SUM(oi.price)
 AS revenue
 FROM customers c
 JOIN orders o
 ON c.customer_id=o.customer_id
-GROUP BY c.country
+JOIN order_items oi
+ON o.order_id=oi.order_id
+GROUP BY c.customer_state
 ORDER BY revenue DESC;"
 }
 
@@ -1112,13 +1207,13 @@ Output
 
 {
   "sql":"SELECT
-p.product_name,
-SUM(o.total_amount)
+p.product_id,
+SUM(oi.price)
 AS revenue
 FROM products p
-JOIN orders o
-ON p.product_id=o.product_id
-GROUP BY p.product_name
+JOIN order_items oi
+ON p.product_id=oi.product_id
+GROUP BY p.product_id
 ORDER BY revenue ASC
 LIMIT 5;"
 }
@@ -1129,18 +1224,24 @@ Example 10
 
 Question
 
-Payment amount by payment method.
+Average review score by product category.
 
 Output
 
 {
   "sql":"SELECT
-payment_method,
-SUM(payment_amount)
-AS total_amount
-FROM payments
-GROUP BY payment_method
-ORDER BY total_amount DESC;"
+p.product_category_name,
+ROUND(AVG(r.review_score),2)
+AS avg_score
+FROM reviews r
+JOIN orders o
+ON r.order_id=o.order_id
+JOIN order_items oi
+ON o.order_id=oi.order_id
+JOIN products p
+ON oi.product_id=p.product_id
+GROUP BY p.product_category_name
+ORDER BY avg_score DESC;"
 }
 
 ------------------------------------------------------------
@@ -1155,13 +1256,13 @@ Output
 
 {
   "sql":"SELECT
-c.customer_name,
+c.customer_id,
 COUNT(o.order_id)
 AS total_orders
 FROM customers c
 JOIN orders o
 ON c.customer_id=o.customer_id
-GROUP BY c.customer_name
+GROUP BY c.customer_id
 HAVING COUNT(o.order_id)>5
 ORDER BY total_orders DESC;"
 }
@@ -1172,15 +1273,15 @@ Example 12
 
 Question
 
-Highest refund amount.
+Highest payment value.
 
 Output
 
 {
   "sql":"SELECT
-MAX(refund_amount)
-AS highest_refund
-FROM refunds;"
+MAX(payment_value)
+AS highest_payment
+FROM payments;"
 }
 
 ------------------------------------------------------------
@@ -1300,7 +1401,7 @@ Output
 
 {
   "refuse":true,
-  "reason":"The request is ambiguous and requires clarification."
+  "reason":"Comparison criteria are missing."
 }
 
 ------------------------------------------------------------
@@ -1329,9 +1430,11 @@ Before returning the response, verify:
 
 ✓ No SQL injection patterns.
 
-✓ No markdown.
+✓ No multiple statements.
 
 ✓ No comments.
+
+✓ No markdown.
 
 ✓ Valid JSON.
 
