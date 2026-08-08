@@ -1,72 +1,44 @@
 """
-Request Models
-
-Defines all incoming API request schemas used by the
-Business Decision Copilot.
+API request models.
 """
 
-from pydantic import BaseModel, Field, ConfigDict
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
 
 
-class BusinessQuestionRequest(BaseModel):
-    """
-    Request payload for POST /ask-business.
-    """
-
-    model_config = ConfigDict(
-        extra="forbid",
-        str_strip_whitespace=True,
-    )
+class BusinessRequest(BaseModel):
+    """Request for the main business question endpoint."""
 
     question: str = Field(
         ...,
         min_length=3,
-        max_length=1000,
-        description="Natural language business question.",
-        examples=[
-            "Which product generated the highest revenue last month?"
-        ],
+        max_length=2000,
+        description="Natural-language business question.",
     )
 
 
 class RetrievalDebugRequest(BaseModel):
-    """
-    Request payload for retrieval debugging.
-    """
-
-    model_config = ConfigDict(
-        extra="forbid",
-        str_strip_whitespace=True,
-    )
-
-    query: str = Field(
-        ...,
-        min_length=3,
-        max_length=1000,
-        description="Question used for RAG retrieval debugging.",
-    )
-
-    top_k: int = Field(
-        default=4,
-        ge=1,
-        le=10,
-        description="Number of retrieved chunks to return.",
-    )
-
-
-class SQLDebugRequest(BaseModel):
-    """
-    Request payload for SQL debugging.
-    """
-
-    model_config = ConfigDict(
-        extra="forbid",
-        str_strip_whitespace=True,
-    )
+    """Request model for retrieval debugging."""
 
     question: str = Field(
         ...,
         min_length=3,
-        max_length=1000,
-        description="Business question to translate into SQL.",
+        max_length=2000,
+    )
+
+    top_k: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+    )
+
+
+class SQLDebugRequest(BaseModel):
+    """Request model for SQL debugging."""
+
+    question: str = Field(
+        ...,
+        min_length=3,
+        max_length=2000,
     )

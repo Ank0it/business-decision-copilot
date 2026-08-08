@@ -15,6 +15,10 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.constants import ConfidenceLevel, QueryType
+from app.models.sql import (
+    SQLExecutionResult,
+    SQLValidationResult,
+)
 
 
 # ==========================================================
@@ -35,63 +39,17 @@ class Citation(BaseModel):
         examples=["refund_policy.md"],
     )
 
-    chunk_id: str = Field(
-        ...,
+    chunk_id: str | None = Field(
+        default=None,
         description="Unique chunk identifier.",
         examples=["refund_policy_chunk_004"],
     )
 
-    score: float = Field(
-        ...,
+    score: float | None = Field(
+        default=None,
         ge=0.0,
         le=1.0,
         description="Vector similarity score.",
-    )
-
-
-# ==========================================================
-# SQL Validation
-# ==========================================================
-
-
-class SQLValidationResult(BaseModel):
-    """
-    SQL validation outcome.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    valid: bool
-
-    reason: str | None = Field(
-        default=None,
-        description="Validation failure reason, if any.",
-    )
-
-
-# ==========================================================
-# SQL Result
-# ==========================================================
-
-
-class SQLResult(BaseModel):
-    """
-    SQL execution output.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    row_count: int = Field(
-        default=0,
-        ge=0,
-    )
-
-    columns: list[str] = Field(
-        default_factory=list,
-    )
-
-    rows: list[dict[str, Any]] = Field(
-        default_factory=list,
     )
 
 
@@ -173,7 +131,7 @@ class BusinessResponse(BaseModel):
 
     sql_validation: SQLValidationResult | None = None
 
-    sql_result: SQLResult | None = None
+    sql_result: SQLExecutionResult | None = None
 
     # --------------------------------------------------
     # Hybrid
