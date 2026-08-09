@@ -68,5 +68,9 @@ class PromptManager:
     def hybrid(cls) -> str:
         return cls.load("hybrid.txt")
 
+    @classmethod
+    def sql_interpreter(cls) -> str:
+        return cls.load("sql_interpreter.txt")
+
 
 prompts = PromptManager()

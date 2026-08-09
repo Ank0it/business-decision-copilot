@@ -135,10 +135,15 @@ def test_sql_dispatch_success(service, monkeypatch):
         lambda sql: execution,
     )
 
+    monkeypatch.setattr(
+        "app.services.business_service.sql_interpreter.interpret",
+        lambda question, sql, result: "10 customers found.",
+    )
+
     response = service.ask("How many customers are there?")
 
     assert response.query_type == QueryType.SQL
-    assert "10 rows" in response.answer
+    assert response.answer == "10 customers found."
     assert response.generated_sql == "SELECT * FROM customers"
     assert response.sql_result is not None
     assert response.sql_result.row_count == 10

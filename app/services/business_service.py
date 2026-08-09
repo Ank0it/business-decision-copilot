@@ -24,6 +24,7 @@ from app.services.refusal import refusal_service
 from app.services.router import router
 from app.services.sql_executor import sql_executor
 from app.services.sql_generator import sql_generator
+from app.services.sql_interpreter import SQLInterpretationError, sql_interpreter
 from app.services.sql_validator import sql_validator
 
 
@@ -124,11 +125,18 @@ class BusinessService:
 
         execution = sql_executor.execute(generated.sql)
 
-        answer = (
-            f"Query returned {execution.row_count} rows."
-            if execution.row_count > 0
-            else "Query executed successfully but returned no rows."
-        )
+        try:
+            answer = sql_interpreter.interpret(
+                question=question,
+                sql=generated.sql,
+                result=execution,
+            )
+        except SQLInterpretationError:
+            answer = (
+                f"Query returned {execution.row_count} rows."
+                if execution.row_count > 0
+                else "Query executed successfully but returned no rows."
+            )
 
         return BusinessResponse(
             query_type=QueryType.SQL,
