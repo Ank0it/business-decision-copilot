@@ -5,7 +5,7 @@ Provides helper functions for safely parsing and validating
 JSON responses returned by the LLM.
 
 Responsibilities:
-- Parse JSON returned by Gemini
+- Parse JSON returned by the LLM
 - Validate required fields
 - Raise consistent exceptions
 """
