@@ -32,14 +32,14 @@ Business users need to ask questions in natural language and receive answers bac
 User Question
     │
     ▼
-QueryRouter (Gemini LLM)
+QueryRouter (ZhipuAI GLM LLM)
     │
     ▼
 BusinessService
     │
-    ├── RAG ──► ChromaDB Retrieval ──► Gemini ──► JSON Parser ──► BusinessResponse
+    ├── RAG ──► ChromaDB Retrieval ──► ZhipuAI GLM ──► JSON Parser ──► BusinessResponse
     │
-    ├── SQL ──► Gemini ──► SQLGeneration/SQLRefusal
+    ├── SQL ──► ZhipuAI GLM ──► SQLGeneration/SQLRefusal
     │             │
     │             ▼
     │         SQLValidator (SELECT-only, schema-aware)
@@ -53,7 +53,7 @@ BusinessService
     ├── HYBRID ──► RAG Retrieval + SQL Generation/Execution
     │                │
     │                ▼
-    │            Gemini (policy + data synthesis)
+    │            ZhipuAI GLM (policy + data synthesis)
     │                │
     │                ▼
     │            BusinessResponse with BusinessInsight
@@ -66,8 +66,8 @@ BusinessService
 1. Client sends `POST /ask-business` with `{"question": "..."}`
 2. FastAPI validates the request body
 3. `BusinessService.ask()` receives the question
-4. `QueryRouter.classify()` sends the question to Gemini with the router prompt
-5. Gemini returns a JSON routing decision (`route` + `reason`)
+4. `QueryRouter.classify()` sends the question to ZhipuAI GLM with the router prompt
+5. ZhipuAI GLM returns a JSON routing decision (`route` + `reason`)
 6. `BusinessService` dispatches to the appropriate pipeline
 7. The pipeline executes (RAG retrieval, SQL generation + validation + execution, or Hybrid)
 8. The result is normalized into a `BusinessResponse` Pydantic model
@@ -79,12 +79,12 @@ BusinessService
 2. **Embedding** — Each chunk is embedded using `sentence-transformers/all-MiniLM-L6-v2`
 3. **Storage** — Embeddings and metadata are stored in a persistent ChromaDB collection under `data/chroma/`
 4. **Retrieval** — User questions are embedded and matched against the vector store; top-K chunks are returned with similarity scores
-5. **Generation** — Retrieved chunks are injected into the RAG prompt; Gemini generates a grounded answer with citations
+5. **Generation** — Retrieved chunks are injected into the RAG prompt; ZhipuAI GLM generates a grounded answer with citations
 6. **Parsing** — The LLM response is parsed as JSON and validated against the expected schema
 
 ## Text-to-SQL Pipeline
 
-1. **Generation** — Gemini receives the SQL prompt with the actual database schema and generates a SQLite SELECT query
+1. **Generation** — ZhipuAI GLM receives the SQL prompt with the actual database schema and generates a SQLite SELECT query
 2. **Validation** — The generated SQL is validated before execution:
    - Only SELECT statements are allowed
    - Destructive keywords are blocked (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, etc.)
@@ -99,7 +99,7 @@ BusinessService
 
 1. Retrieves policy evidence via RAG
 2. Generates and executes SQL via the Text-to-SQL pipeline
-3. Combines both sources in a Gemini prompt
+3. Combines both sources in a ZhipuAI GLM prompt
 4. Returns a structured recommendation with:
    - `policy_summary` — what the documents state
    - `data_summary` — what the SQL results show
@@ -149,10 +149,10 @@ The SQLite database is built from the **real Olist Brazilian E-Commerce Public D
 
 ## LLM Integration
 
-- **Provider:** Google Gemini
+- **Provider:** ZhipuAI
 - **Model:** `glm-4.5-flash`
 - **Configuration:** Temperature and max output tokens are configurable via environment variables
-- **Lazy initialization:** The Gemini client is created on first use
+- **Lazy initialization:** The ZhipuAI client is created on first use
 - **Error handling:** Empty responses, invalid JSON, API errors, and quota exhaustion are surfaced with clear error messages
 - **Prompt/JSON/Pydantic contract:** Every prompt requests JSON that matches the corresponding Pydantic model; the parser validates required fields before services construct response objects
 
@@ -404,7 +404,7 @@ FastAPI automatic documentation:
 python -m pytest tests/ -v
 ```
 
-Current test status: **97 passed, 0 failed.**
+Current test status: **112 passed, 0 failed.**
 
 ## Benchmark Commands
 
@@ -416,24 +416,59 @@ python -m benchmark.evaluate
 
 Benchmark result files are stored locally and are not committed to version control.
 
-**Note:** Live benchmark results require an active Gemini API quota. Current status: pending quota reset.
+## Benchmark Results
+
+| Benchmark | Cases | Passed | Failed | Score |
+|---|---:|---:|---:|---:|
+| Router | 30 | 29 | 1 | 96.7% |
+| RAG | 10 | 4 | 6 | 40.0% |
+| SQL | 10 | 9 | 1 | 90.0% |
+| Hybrid | 5 | 0 | 5 | 0.0% |
+| Refusal | 5 | 5 | 0 | 100.0% |
+| **Overall** | **30** | **17** | **13** | **56.7%** |
+
+**Provider:** ZhipuAI
+**Model:** `glm-4.5-flash`
+**Benchmark date:** 2026-08-09
+**Total LLM calls:** 88
+
+### Methodology Notes
+
+- **Routing accuracy** is measured independently from downstream pipeline execution. A correctly routed case that subsequently fails during RAG/SQL/Hybrid execution is not counted as a routing failure.
+- **1 of 30 cases** had an incorrect route prediction (REFUSAL-003 was routed to SQL).
+- **0 of 30 cases** had unknown routing (router returned an exception).
+- **Model/Application success rate** (excluding confirmed external API failures): 56.7% (17/30).
+- Each benchmark case makes 1–4 LLM calls depending on the pipeline. Total LLM calls per run: 88.
+- Results are from a single live benchmark run and may vary due to model nondeterminism and API quota limits.
+
+### Failure Breakdown
+
+| Category | Failure Type | Count |
+|----------|-------------|-------:|
+| RAG | Missing expected keywords in answer | 6 |
+| SQL | Model returned empty response | 1 |
+| Hybrid | Missing expected keywords in answer | 5 |
+| **Total MODEL_FAILURE** | | **12** |
+| **Total EXTERNAL_API_FAILURE** | | **0** |
+| **Total PARSER_FAILURE** | | **0** |
+| **Total APPLICATION_FAILURE** | | **0** |
 
 ## Current Verification Results
 
 | Component | Status |
 |-----------|--------|
-| Automated tests | 97 passed |
+| Automated tests | 112 passed |
 | Database seeded | Yes — 8 tables + 1 view |
 | Foreign-key integrity | Pass — 0 violations |
 | RAG chunks | 47 chunks from 8 documents |
 | Chroma retrieval | Verified — relevant results returned |
 | SQL validator | Schema-aware, dynamic table detection |
 | API endpoints | All 5 endpoints responding |
-| Live LLM integration | Previously verified; currently blocked by Gemini free-tier quota exhaustion |
+| Benchmark (live) | 56.7% overall accuracy — 17/30 passed; 96.7% routing accuracy; 88 LLM calls |
 
 ## Known Limitations
 
-- **Gemini free-tier quota:** The Google Gemini free tier allows 20 requests per day. Live LLM-dependent endpoints may return `429 RESOURCE_EXHAUSTED` during heavy testing. Wait for quota reset or upgrade to a paid tier.
+- **ZhipuAI free-tier quota:** The ZhipuAI free tier allows 20 requests per day. Live LLM-dependent endpoints may return `429 RESOURCE_EXHAUSTED` during heavy testing. Wait for quota reset or upgrade to a paid tier.
 - **Benchmark scores:** Live benchmark results have not yet been generated due to quota limits. The benchmark infrastructure is in place and ready to run.
 - **RAG scope:** RAG answers are limited to the 8 ingested business-policy documents. Questions outside this corpus are refused.
 - **SQL scope:** Text-to-SQL is limited to the Olist schema defined in `schema.sql`. Questions requiring data not present in the dataset are refused.
@@ -441,7 +476,7 @@ Benchmark result files are stored locally and are not committed to version contr
 
 ## Future Improvements
 
-- Add retry/backoff logic for transient Gemini API errors (503/429)
+- Add retry/backoff logic for transient ZhipuAI API errors (503/429)
 - Expand business-policy document corpus
 - Add user authentication and rate limiting
 - Add request logging and observability
