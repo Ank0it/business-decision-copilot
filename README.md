@@ -466,10 +466,144 @@ Benchmark result files are stored locally and are not committed to version contr
 | API endpoints | All 5 endpoints responding |
 | Benchmark (live) | 56.7% overall accuracy — 17/30 passed; 96.7% routing accuracy; 88 LLM calls |
 
+## Limitations & Benchmark Interpretation
+
+This section explains why the Business Decision Copilot does not currently achieve 100% end-to-end accuracy and how the benchmark results should be interpreted.
+
+### 1. Why 100% Accuracy Is Not Realistic for This Architecture
+
+This is an end-to-end LLM application, not a deterministic rule-based system. A single benchmark case traverses multiple stages:
+
+1. **Router LLM** — classifies the question into RAG, SQL, Hybrid, or Refusal.
+2. **Pipeline execution** — retrieval, SQL generation, validation, and execution.
+3. **LLM answer synthesis** — generates the final natural-language response.
+4. **Structured parsing** — converts the LLM output into a validated JSON response.
+
+A failure at any LLM-dependent stage can cause the complete test case to fail. Improving one component does not automatically produce 100% end-to-end accuracy because errors can occur independently at multiple stages.
+
+### 2. LLM Non-Determinism
+
+LLM outputs are probabilistic rather than deterministic. The benchmark required **88 measured LLM calls** across **30 benchmark cases**, with some cases making multiple LLM calls (router + pipeline + synthesis). Different stages can produce different outputs for similar prompts, and a single benchmark run represents one sample of model behavior rather than a mathematical guarantee.
+
+### 3. RAG Does Not Guarantee Correct Answers
+
+**RAG accuracy: 4/10 = 40.0%**
+
+Retrieval and generation are distinct capabilities. The benchmark shows that retrieving relevant documents does not guarantee that the final answer will include all expected facts. The 6 RAG failures occurred because the model-generated answers omitted expected keywords such as:
+
+- `refund`
+- `annual subscription`
+- `payment`
+- `enterprise`
+- `pricing`
+- `finance`
+- `approval`
+
+The benchmark evaluator uses expected keywords as its correctness criterion. Missing a keyword does not necessarily mean the entire natural-language answer was factually wrong, but it does indicate that the generated response did not satisfy the benchmark's required answer contract.
+
+### 4. Hybrid Queries Are the Hardest Case
+
+**Hybrid accuracy: 0/5 = 0.0%**
+
+Hybrid queries are inherently more difficult because they require:
+
+- Combining multiple information sources (policy documents + database results).
+- Reconciling heterogeneous evidence with different formats and levels of detail.
+- Producing a coherent recommendation in the final synthesis step.
+
+The benchmark demonstrates this clearly: despite the underlying retrieval and SQL components functioning, the final hybrid synthesis did not satisfy any of the 5 benchmark cases. All 5 failures are classified as `MODEL_FAILURE` due to missing expected keywords in the final answer.
+
+### 5. SQL Is Stronger, But Still Not 100%
+
+**SQL accuracy: 9/10 = 90.0%**
+
+The SQL pipeline performs substantially better than open-ended RAG or Hybrid synthesis because:
+
+- SQL generation is more structured than free-form natural-language synthesis.
+- SQL validation restricts unsafe operations before execution.
+- SQL execution provides deterministic database results.
+- The system applies stronger constraints than open-ended answer generation.
+
+However, it can still fail because the LLM must correctly interpret natural language, map business terminology to schema fields, generate valid SQL, and return a usable final response. **SQL-005** demonstrates this: the case failed because the model returned an empty response, not because of a SQL generation or execution error.
+
+### 6. Routing Is Not the Main Bottleneck
+
+**Routing accuracy: 29/30 = 96.7%**
+
+Routing is relatively strong compared with downstream answer generation. There was only one actual routing error:
+
+- **REFUSAL-003** ("Why did our revenue decrease last month?") was routed to `sql` instead of `refusal`.
+
+The biggest accuracy gap is not routing; it is downstream answer generation, particularly RAG and Hybrid synthesis.
+
+### 7. Citation Coverage Is Also Imperfect
+
+**Citation accuracy: 6/10 = 60.0%**
+
+Even when the system can retrieve relevant information, citation coverage is not guaranteed for every benchmark case. This indicates that citation generation and evidence attribution remain imperfect components.
+
+### 8. Benchmark Score vs. Production Quality
+
+The benchmark results should be interpreted as follows:
+
+| Metric | Value | Interpretation |
+|--------|-------|----------------|
+| Overall end-to-end accuracy | 17/30 = 56.7% | Measured on a 30-case evaluation set with `glm-4.5-flash`. Not a universal accuracy claim. |
+| Routing accuracy | 29/30 = 96.7% | Routing is the strongest measured component. |
+| SQL accuracy | 9/10 = 90.0% | Structured SQL pipeline is robust but not perfect. |
+| Refusal accuracy | 5/5 = 100.0% | Refusal handling is reliable on the benchmark set. |
+| RAG accuracy | 4/10 = 40.0% | Open-ended document QA is the weakest component. |
+| Hybrid accuracy | 0/5 = 0.0% | Multi-source synthesis is the hardest case. |
+| Citation accuracy | 6/10 = 60.0% | Citation coverage is incomplete. |
+
+These numbers are benchmark-specific measurements. They should not be interpreted as:
+
+- "the model is 56.7% intelligent"
+- a universal accuracy number applicable to all questions
+- a guaranteed production failure rate
+
+### 9. What Would Be Required to Move Toward 100%
+
+The following engineering directions could reduce failure modes, but none can honestly be described as guaranteeing 100% accuracy:
+
+- **Stronger model** — fine-tuned or larger models may improve answer quality.
+- **Better routing prompts** — few-shot examples and clearer routing instructions.
+- **Improved RAG retrieval/reranking** — better chunking, metadata filtering, and hybrid search.
+- **Query rewriting** — decompose complex questions before retrieval or SQL generation.
+- **Stronger structured output constraints** — enforce JSON schemas and field requirements.
+- **Schema-aware SQL generation** — tighter coupling between business terminology and database schema.
+- **SQL self-correction/retry** — validate and regenerate SQL on failure.
+- **Answer verification** — check generated answers against retrieved evidence.
+- **Citation validation** — ensure citations are present and accurate.
+- **Hybrid answer decomposition** — break multi-source synthesis into smaller, verifiable steps.
+- **Deterministic post-processing** — normalize and validate outputs where possible.
+- **Retry/fallback handling** — recover from empty or malformed LLM responses.
+- **Larger benchmark datasets** — 30 cases are useful for regression testing but not statistically sufficient for universal claims.
+- **Repeated benchmark runs** — establish variance and confidence intervals.
+- **Human evaluation** — supplement keyword-based scoring with human judgment.
+
+### 10. Benchmark Scope
+
+The current benchmark consists of:
+
+- **30 cases** total
+- **RAG:** 10 cases
+- **SQL:** 10 cases
+- **Hybrid:** 5 cases
+- **Refusal:** 5 cases
+- **88 measured LLM calls** across all cases
+
+A 30-case benchmark is useful for regression testing and engineering comparison, but it is not statistically sufficient to claim universal system accuracy. The benchmark should be treated as a diagnostic tool that exposes failure modes and provides a measurable baseline for future improvements.
+
+### 11. Honest Conclusion
+
+The current benchmark should therefore be interpreted as a **diagnostic engineering benchmark** rather than a claim of universal accuracy. The strongest measured component is routing at **96.7%**, followed by SQL at **90.0%** and refusal handling at **100.0%**. The largest weaknesses are hybrid synthesis at **0%** and RAG at **40.0%**. The overall **56.7%** score reflects the difficulty of producing correct end-to-end answers across multiple LLM-dependent stages.
+
+The purpose of the benchmark is to expose these failure modes and provide a measurable baseline for future improvements, not to imply that 100% accuracy is achievable simply by tuning a prompt.
+
 ## Known Limitations
 
 - **ZhipuAI free-tier quota:** The ZhipuAI free tier allows 20 requests per day. Live LLM-dependent endpoints may return `429 RESOURCE_EXHAUSTED` during heavy testing. Wait for quota reset or upgrade to a paid tier.
-- **Benchmark scores:** Live benchmark results have not yet been generated due to quota limits. The benchmark infrastructure is in place and ready to run.
 - **RAG scope:** RAG answers are limited to the 8 ingested business-policy documents. Questions outside this corpus are refused.
 - **SQL scope:** Text-to-SQL is limited to the Olist schema defined in `schema.sql`. Questions requiring data not present in the dataset are refused.
 - **Review duplicates:** The source Olist dataset contains 814 duplicate `review_id` values. The schema uses a surrogate `review_pk` to preserve all records.
